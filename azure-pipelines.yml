@@ -14,7 +14,7 @@ stages:
     pool:
       name: 'SelfHostedAgent'
       demands:
-        - agent.name -equals 'RCTSA-35VOLR3'
+        - agent.name -equals RCTSA-35VOLR3
     steps:
     # 1️⃣ Use .NET 10 SDK
     - task: UseDotNet@2
