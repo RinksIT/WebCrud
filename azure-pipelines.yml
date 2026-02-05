@@ -1,5 +1,5 @@
 trigger:
-- main   # Runs automatically on push to main branch
+- main
 
 pool:
   vmImage: 'windows-latest'
@@ -8,23 +8,23 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-# 1. Use .NET 10 SDK (fallback to latest if 10 not available)
+# 1️⃣ Use .NET 10 SDK
 - task: UseDotNet@2
   displayName: 'Use .NET 10 SDK'
   inputs:
     packageType: 'sdk'
-    version: '10.x.x'
+    version: '10.0.x'        # Correct format
     includePreviewVersions: true
     installationPath: $(Agent.ToolsDirectory)/dotnet
 
-# 2. Restore NuGet packages
+# 2️⃣ Restore dependencies
 - task: DotNetCoreCLI@2
   displayName: 'Restore NuGet Packages'
   inputs:
     command: 'restore'
     projects: '**/*.csproj'
 
-# 3. Build the project
+# 3️⃣ Build the project
 - task: DotNetCoreCLI@2
   displayName: 'Build Solution'
   inputs:
@@ -32,7 +32,7 @@ steps:
     projects: '**/*.csproj'
     arguments: '--configuration $(buildConfiguration)'
 
-# 4. Publish the project
+# 4️⃣ Publish the project
 - task: DotNetCoreCLI@2
   displayName: 'Publish Project'
   inputs:
@@ -41,7 +41,7 @@ steps:
     arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
     zipAfterPublish: false
 
-# 5. Publish the build artifact
+# 5️⃣ Publish build artifact
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact'
   inputs:
