@@ -59,7 +59,7 @@ stages:
           Import-Module WebAdministration
           Stop-Website -Name "WebCrud"
 
-    # 6️⃣ Copy Published Files to IIS Folder
+    # 6️⃣ Copy Published Files to IIS Folder (contents only)
     - task: PowerShell@2
       displayName: 'Deploy to IIS Folder'
       inputs:
@@ -71,11 +71,23 @@ stages:
           Write-Host "Source: $source"
           Write-Host "Destination: $destination"
 
+          # Ensure destination exists
           if (!(Test-Path $destination)) {
-              New-Item -ItemType Directory -Path $destination -Force
+              New-Item -ItemType Directory -Path $destination -Force | Out-Null
           }
 
-          Copy-Item "$source\*" $destination -Recurse -Force
+          # Remove old files
+          Remove-Item "$destination\*" -Recurse -Force -ErrorAction SilentlyContinue
+
+          # Copy **contents only**, not the folder itself
+          Get-ChildItem "$source" -Recurse | ForEach-Object {
+              $dest = Join-Path $destination ($_.FullName.Substring($source.Length + 1))
+              if ($_.PSIsContainer) {
+                  if (!(Test-Path $dest)) { New-Item -ItemType Directory -Path $dest -Force | Out-Null }
+              } else {
+                  Copy-Item $_.FullName $dest -Force
+              }
+          }
 
     # 7️⃣ Start IIS Website
     - task: PowerShell@2
