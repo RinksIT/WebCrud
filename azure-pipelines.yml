@@ -1,62 +1,58 @@
 trigger:
-- main   # change to your branch
-
-pool:
-  name: 'SelfHostedAgent'
-  demands:
-    - agent.name -equals 'RCTSA-35VOLR3'
-
+  branches:
+    include:
+    - main
 variables:
-  solution: '**/*.csproj'
-  publishFolder: 'C:\Publish IIS localhost rp\WebCrud'
+- name: buildConfiguration
+  value: 'Release'
+stages:
+- stage: __default
+  jobs:
+  - job: Job
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET 10 SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '10.0.x'
+        includePreviewVersions: true
+        installationPath: $(Agent.ToolsDirectory)/dotnet
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet Packages'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Solution'
+      inputs:
+        command: 'build'
+        projects: '**/*.csproj'
+        arguments: '--configuration $(buildConfiguration)'
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish Project'
+      inputs:
+        command: 'publish'
+        publishWebProjects: true
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+        zipAfterPublish: false
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact'
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)'
+        artifactName: 'drop'
+        publishLocation: 'Container'
+    - task: CopyFiles@2
+      displayName: 'Copy Published Files to IIS'
+      inputs:
+        SourceFolder: '$(Build.ArtifactStagingDirectory)'
+        Contents: '**/*'
+        TargetFolder: 'C:\inetpub\wwwroot\MyMvcApp'
+    - task: IISWebAppDeploymentOnMachineGroup@0
+      displayName: 'Deploy to Local IIS'
+      inputs:
+        WebSiteName: 'MyMvcApp'
+        Package: 'C:\inetpub\wwwroot\MyMvcApp'
+        RemoveAdditionalFilesFlag: true
 
-steps:
-# 1️⃣ Use the .NET 10 SDK
-- task: UseDotNet@2
-  displayName: 'Use .NET 10 SDK'
-  inputs:
-    packageType: 'sdk'
-    version: '10.0.x'   # latest 10.x SDK
-
-# 2️⃣ Restore NuGet packages
-- task: DotNetCoreCLI@2
-  displayName: 'Restore NuGet Packages'
-  inputs:
-    command: 'restore'
-    projects: '$(solution)'
-
-# 3️⃣ Build the project
-- task: DotNetCoreCLI@2
-  displayName: 'Build Project'
-  inputs:
-    command: 'build'
-    projects: '$(solution)'
-    arguments: '--configuration Release'
-
-# 4️⃣ Publish the project to local folder
-- task: DotNetCoreCLI@2
-  displayName: 'Publish Project'
-  inputs:
-    command: 'publish'
-    projects: '$(solution)'
-    arguments: '--configuration Release --output "$(publishFolder)"'
-
-# 5️⃣ Copy files to IIS folder (overwrite)
-- powershell: |
-    $iisPath = "$(publishFolder)"
-    $webSiteName = "WebCrud"
-
-    Import-Module WebAdministration
-    $sitePath = (Get-Item "IIS:\Sites\$webSiteName").PhysicalPath
-    Write-Host "Copying files from $iisPath to IIS site path $sitePath"
-    robocopy $iisPath $sitePath /MIR /NP /NFL /NDL
-  displayName: 'Deploy to IIS'
-
-# 6️⃣ Restart IIS App Pool
-- powershell: |
-    $webSiteName = "WebCrud"
-    Import-Module WebAdministration
-    $appPool = (Get-Item "IIS:\Sites\$webSiteName").ApplicationPool
-    Write-Host "Restarting App Pool: $appPool"
-    Restart-WebAppPool -Name $appPool
-  displayName: 'Restart IIS App Pool'
