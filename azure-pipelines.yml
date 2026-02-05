@@ -8,13 +8,14 @@ variables:
   value: 'Release'
 
 stages:
-- stage: __default
+- stage: Build_And_Deploy
   jobs:
-  - job: Job
+  - job: BuildDeployJob
     pool:
       name: 'SelfHostedAgent'
       demands:
         - agent.name -equals RCTSA-35VOLR3
+
     steps:
     # 1️⃣ Use .NET 10 SDK
     - task: UseDotNet@2
@@ -49,23 +50,38 @@ stages:
         arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
         zipAfterPublish: false
 
-    # 5️⃣ Publish build artifacts (optional)
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish Artifact'
+    # 5️⃣ Stop IIS Website
+    - task: PowerShell@2
+      displayName: 'Stop IIS Website'
       inputs:
-        pathToPublish: '$(Build.ArtifactStagingDirectory)'
-        artifactName: 'drop'
-        publishLocation: 'Container'
-    - task: CopyFiles@2
-      displayName: 'Copy Published Files to IIS'
-      inputs:
-        SourceFolder: '$(Build.ArtifactStagingDirectory)'
-        Contents: '**/*'
-        TargetFolder: 'C:\Publish IIS localhost rp\WebCrud'
-    - task: IISWebAppDeploymentOnMachineGroup@0
-      displayName: 'Deploy to Local IIS'
-      inputs:
-        WebSiteName: 'WebCrud'
-        Package: 'C:\Publish IIS localhost rp\WebCrud'
-        RemoveAdditionalFilesFlag: true
+        targetType: 'inline'
+        script: |
+          Import-Module WebAdministration
+          Stop-Website -Name "WebCrud"
 
+    # 6️⃣ Copy Published Files to IIS Folder
+    - task: PowerShell@2
+      displayName: 'Deploy to IIS Folder'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $source = "$(Build.ArtifactStagingDirectory)"
+          $destination = "C:\Publish IIS localhost rp\WebCrud"
+
+          Write-Host "Source: $source"
+          Write-Host "Destination: $destination"
+
+          if (!(Test-Path $destination)) {
+              New-Item -ItemType Directory -Path $destination -Force
+          }
+
+          Copy-Item "$source\*" $destination -Recurse -Force
+
+    # 7️⃣ Start IIS Website
+    - task: PowerShell@2
+      displayName: 'Start IIS Website'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Import-Module WebAdministration
+          Start-Website -Name "WebCrud"
