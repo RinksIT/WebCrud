@@ -1,38 +1,50 @@
-# ASP.NET Core
-# Build and test ASP.NET Core projects targeting .NET Core.
-# Add steps that run tests, create a NuGet package, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
 trigger:
-- master
+- main   # Runs automatically on push to main branch
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'windows-latest'
 
 variables:
   buildConfiguration: 'Release'
 
 steps:
-- script: dotnet build --configuration $(buildConfiguration)
-  displayName: 'dotnet build $(buildConfiguration)'
-  
-  
- # 1. Use .NET SDK 
-- task: NuGetCommand@2
+# 1. Use .NET 10 SDK (fallback to latest if 10 not available)
+- task: UseDotNet@2
+  displayName: 'Use .NET 10 SDK'
   inputs:
-    command: 'restore'
-    restoreSolution: '**/*.sln'
-    feedsToUse: 'select'
+    packageType: 'sdk'
+    version: '10.x.x'
+    includePreviewVersions: true
+    installationPath: $(Agent.ToolsDirectory)/dotnet
 
 # 2. Restore NuGet packages
-- task: VSBuild@1
+- task: DotNetCoreCLI@2
+  displayName: 'Restore NuGet Packages'
   inputs:
-    solution: '**\*.sln'
-    configuration: 'Release'
+    command: 'restore'
+    projects: '**/*.csproj'
 
 # 3. Build the project
-- task: PublishBuildArtifacts@1
+- task: DotNetCoreCLI@2
+  displayName: 'Build Solution'
   inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
+    command: 'build'
+    projects: '**/*.csproj'
+    arguments: '--configuration $(buildConfiguration)'
+
+# 4. Publish the project
+- task: DotNetCoreCLI@2
+  displayName: 'Publish Project'
+  inputs:
+    command: 'publish'
+    publishWebProjects: true
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    zipAfterPublish: false
+
+# 5. Publish the build artifact
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact'
+  inputs:
+    pathToPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: 'drop'
     publishLocation: 'Container'
