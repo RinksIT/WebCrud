@@ -1,5 +1,5 @@
 trigger:
-- master   # optional
+- main   # optional
 
 pool:
   name: 'SelfHostedAgent'
