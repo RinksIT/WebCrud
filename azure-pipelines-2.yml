@@ -1,0 +1,14 @@
+trigger:
+- main   # or 'master' if your branch is named master
+
+pool:
+  name: 'SelfHostedAgent'
+  demands:
+    - agent.name -equals 'RCTSA-35VOLR3'
+
+steps:
+- script: |
+    echo "Hello from self-hosted agent"
+    echo "Current directory: $(System.DefaultWorkingDirectory)"
+    dir
+  displayName: 'Test Self-Hosted Agent'
