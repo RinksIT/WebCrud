@@ -56,20 +56,4 @@ stages:
         pathToPublish: '$(Build.ArtifactStagingDirectory)'
         artifactName: 'drop'
         publishLocation: 'Container'
-
-    # 6️⃣ Copy files to your IIS folder
-    - task: CopyFiles@2
-      displayName: 'Copy Published Files to IIS'
-      inputs:
-        SourceFolder: '$(Build.ArtifactStagingDirectory)'
-        Contents: '**/*'
-        TargetFolder: 'C:\Publish IIS localhost rp\WebCrud'
-
-    # 7️⃣ Deploy to local IIS (restart App Pool)
-    - powershell: |
-        $webSiteName = "WebCrud"
-        Import-Module WebAdministration
-        $appPool = (Get-Item "IIS:\Sites\$webSiteName").ApplicationPool
-        Write-Host "Restarting App Pool: $appPool"
-        Restart-WebAppPool -Name $appPool
-      displayName: 'Restart IIS App Pool'
+ 
