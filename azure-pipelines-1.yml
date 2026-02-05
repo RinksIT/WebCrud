@@ -1,15 +1,10 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- main   # runs on push to main branch, optional for test
+- master   # optional
 
 pool:
-  name: 'SelfHostedAgent'   # replace with your pool name
+  name: 'SelfHostedAgent'
   demands:
-    - agent.name -equals 'RCTSA-35VOLR3'  # replace with your agent name
+    - agent.name -equals 'RCTSA-35VOLR3'
 
 steps:
 - script: echo "Hello from self-hosted agent"
