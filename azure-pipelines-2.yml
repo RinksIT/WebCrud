@@ -4,7 +4,7 @@ trigger:
 pool:
   name: 'SelfHostedAgent'
   demands:
-    - agent.name -equals 'RCTSA-35VOLR3'
+    - agent.name -equals RCTSA-35VOLR3
 
 steps:
 - script: |
