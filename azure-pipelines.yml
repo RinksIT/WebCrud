@@ -56,4 +56,16 @@ stages:
         pathToPublish: '$(Build.ArtifactStagingDirectory)'
         artifactName: 'drop'
         publishLocation: 'Container'
- 
+    - task: CopyFiles@2
+      displayName: 'Copy Published Files to IIS'
+      inputs:
+        SourceFolder: '$(Build.ArtifactStagingDirectory)'
+        Contents: '**/*'
+        TargetFolder: 'C:\Publish IIS localhost rp\WebCrud'
+    - task: IISWebAppDeploymentOnMachineGroup@0
+      displayName: 'Deploy to Local IIS'
+      inputs:
+        WebSiteName: 'WebCrud'
+        Package: 'C:\Publish IIS localhost rp\WebCrud'
+        RemoveAdditionalFilesFlag: true
+
