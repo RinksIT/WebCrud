@@ -1,0 +1,11 @@
+trigger:
+- main   # optional
+
+pool:
+  name: 'SelfHostedAgent'
+  demands:
+    - agent.name -equals 'RCTSA-35VOLR3'
+
+steps:
+- script: echo "Hello from self-hosted agent"
+  displayName: 'Test Agent'
