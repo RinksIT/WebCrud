@@ -1,7 +1,10 @@
-trigger:
+schedules:
+- cron: "*/5 * * * *"
+  displayName: "Poll main branch"
   branches:
     include:
       - main
+  always: true
 
 variables:
 - name: buildConfiguration
